@@ -14,6 +14,7 @@ import './managers/native_ad_manager.dart';
 import './managers/rewarded_manager.dart';
 import './models/ad_config.dart';
 import './models/ad_types.dart';
+import './models/user_segment.dart';
 import './services/ad_initializer.dart';
 import './services/ad_service.dart';
 import './services/analytics_service.dart';
@@ -123,7 +124,10 @@ class AdsManager {
     // Register ad type managers
     if (!Get.isRegistered<BannerManager>()) {
       final analytics = Get.find<AdAnalyticsController>();
-      Get.put(BannerManager(analytics: analytics), permanent: true);
+      _bannerManager = Get.put(
+        BannerManager(analytics: analytics),
+        permanent: true,
+      );
     }
 
     if (!Get.isRegistered<InterstitialManager>()) {
@@ -144,7 +148,10 @@ class AdsManager {
 
     if (!Get.isRegistered<NativeAdManager>()) {
       final analytics = Get.find<AdAnalyticsController>();
-      Get.put(NativeAdManager(analytics: analytics), permanent: true);
+      _nativeAdManager = Get.put(
+        NativeAdManager(analytics: analytics),
+        permanent: true,
+      );
     }
 
     // Finally register the AdController that will use all of the above
@@ -379,6 +386,57 @@ class AdsManager {
     return ad;
   }
 
+  /// Loads an interstitial ad for future display
+  Future<bool> loadInterstitialAd({
+    String placementName = 'default',
+    Function()? onAdLoaded,
+    Function(String error)? onAdFailedToLoad,
+  }) async {
+    try {
+      _requireInitialization();
+      print(
+        '[AdsManager] Loading interstitial ad for placement: $placementName',
+      );
+
+      // Check if ads are allowed for this user
+      if (_adController.isPremiumUser.value) {
+        final error = 'Premium users don\'t see ads';
+        print('[AdsManager] $error');
+        if (onAdFailedToLoad != null) {
+          onAdFailedToLoad(error);
+        }
+        return false;
+      }
+
+      // Get user segment for analytics
+      final userSegment = _segmentationController.currentSegment.value;
+
+      // Load the ad using the specialized manager
+      final result = await _interstitialManager.loadInterstitial(
+        placementName: placementName,
+        userSegment: userSegment,
+      );
+
+      if (result) {
+        print('[AdsManager] Interstitial ad loaded successfully');
+        if (onAdLoaded != null) {
+          onAdLoaded();
+        }
+      } else if (onAdFailedToLoad != null) {
+        onAdFailedToLoad('Failed to load interstitial ad');
+      }
+
+      return result;
+    } catch (e, stackTrace) {
+      print('[AdsManager] Exception in loadInterstitialAd: $e');
+      print(stackTrace);
+      if (onAdFailedToLoad != null) {
+        onAdFailedToLoad(e.toString());
+      }
+      return false;
+    }
+  }
+
   /// Checks if the interstitial ad is loaded
   bool get isInterstitialAdLoaded {
     _requireInitialization();
@@ -490,11 +548,11 @@ class AdsManager {
     _requireInitialization();
 
     return {
-      'impressions': _analyticsController.impressions.value,
-      'clicks': _analyticsController.clicks.value,
+      'impressions': _analyticsController.getImpressions(),
+      'clicks': _analyticsController.getClicks(),
       'ctr': _analyticsController.getOverallCtr(),
-      'fillRate': _analyticsController.fillRate.value,
-      'showRate': _analyticsController.showRate.value,
+      'fillRate': _analyticsController.getFillRate(),
+      'showRate': _analyticsController.getShowRate(),
       'estimatedRevenue': _analyticsController.getEstimatedRevenue(),
     };
   }
@@ -515,6 +573,134 @@ class AdsManager {
   bool canShowAd(AdType type) {
     _requireInitialization();
     return _canShowAdType(type);
+  }
+
+  /// Force shows an interstitial ad by bypassing frequency and segmentation rules (USE FOR TESTING ONLY)
+  Future<bool> forceShowInterstitialAd({
+    String placementName = 'default',
+    Function()? onAdDismissed,
+    Function(String error)? onAdFailedToShow,
+  }) async {
+    try {
+      _requireInitialization();
+      print(
+        '[AdsManager] Force showing interstitial ad, bypassing frequency and segmentation rules',
+      );
+
+      // Get user segment for analytics
+      final userSegment = _segmentationController.currentSegment.value;
+
+      // Show the ad using the specialized manager
+      final result = await _interstitialManager.showInterstitial(
+        placementName: placementName,
+        userSegment: userSegment,
+        onAdDismissed: () {
+          if (onAdDismissed != null) {
+            onAdDismissed();
+          }
+        },
+        onAdFailedToShow: (error) {
+          print('[AdsManager] Failed to force show interstitial ad: $error');
+          if (onAdFailedToShow != null) {
+            onAdFailedToShow(error);
+          }
+        },
+      );
+
+      print('[AdsManager] Force interstitial ad result: $result');
+      return result;
+    } catch (e, stackTrace) {
+      print('[AdsManager] Exception in forceShowInterstitialAd: $e');
+      print(stackTrace);
+      if (onAdFailedToShow != null) {
+        onAdFailedToShow(e.toString());
+      }
+      return false;
+    }
+  }
+
+  /// TEST MODE: Tăng số phiên người dùng (chỉ sử dụng cho mục đích kiểm thử)
+  void incrementUserSessions() {
+    _requireInitialization();
+    _segmentationController.userSessionsCount.value += 1;
+    print(
+      '[AdsManager] TEST MODE: Đã tăng số phiên người dùng lên ${_segmentationController.userSessionsCount.value}',
+    );
+    // Re-evaluate user segment after changing session count
+    _segmentationController.evaluateSegmentChange();
+  }
+
+  /// TEST MODE: Thay đổi phân đoạn người dùng (chỉ sử dụng cho mục đích kiểm thử)
+  void setUserSegment(UserSegment segment) {
+    _requireInitialization();
+    _segmentationController.currentSegment.value = segment;
+    print(
+      '[AdsManager] TEST MODE: Đã chuyển người dùng sang phân đoạn ${segment.toString()}',
+    );
+  }
+
+  /// DEBUG: In thông tin chi tiết về các giới hạn quảng cáo
+  void printAdDebugInfo(AdType type) {
+    if (!_isInitialized) {
+      print('[AdsManager] DEBUG: System not initialized yet');
+      return;
+    }
+
+    print('\n==== ADS DEBUG INFO: ${type.toString()} ====');
+    print('- isPremiumUser: ${_adController.isPremiumUser.value}');
+    print('- isAdFreeSession: ${_adController.isAdFreeSession.value}');
+    print('- User segment: ${_segmentationController.currentSegment.value}');
+    print(
+      '- User sessions count: ${_segmentationController.userSessionsCount.value}',
+    );
+    print('- Can show this ad type: ${_canShowAdType(type)}');
+
+    switch (type) {
+      case AdType.interstitial:
+        print(
+          '- Max interstitials per day: ${_frequencyController.maxInterstitialsPerDay}',
+        );
+        print(
+          '- Max interstitials per session: ${_frequencyController.maxInterstitialsPerSession}',
+        );
+        print(
+          '- Cooldown seconds: ${_frequencyController.interstitialCooldownSeconds}',
+        );
+        print(
+          '- Should show interstitial (by segment): ${_segmentationController.shouldShowInterstitial()}',
+        );
+        print(
+          '- Can show interstitial (by frequency): ${_frequencyController.canShowInterstitial()}',
+        );
+        break;
+      case AdType.rewarded:
+        print(
+          '- Max rewarded per session: ${_frequencyController.maxRewardedPerSession}',
+        );
+        print(
+          '- Can show rewarded (by frequency): ${_frequencyController.canShowRewardedAd()}',
+        );
+        break;
+      case AdType.native:
+        print(
+          '- Max native ads per session: ${_frequencyController.maxNativeAdsPerSession}',
+        );
+        print(
+          '- Should show native ad (by segment): ${_segmentationController.shouldShowNativeAd()}',
+        );
+        print(
+          '- Can show native ad (by frequency): ${_frequencyController.canShowNativeAd()}',
+        );
+        break;
+      case AdType.banner:
+        print(
+          '- Should show banner (by segment): ${_segmentationController.shouldShowBannerAd()}',
+        );
+        break;
+      default:
+        break;
+    }
+    print('===============================\n');
   }
 
   /// Ensures the ad system is initialized before operations

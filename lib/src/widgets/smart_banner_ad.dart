@@ -45,6 +45,10 @@ class SmartBannerAd extends StatelessWidget {
     return Padding(
       padding: padding,
       child: Obx(() {
+        // Explicitly watch the loading status to make this widget reactive
+        final isLoading = adService.bannerAdLoading.value;
+
+        // Get the banner ad widget
         final adWidget = adService.getBannerAdWidget();
 
         // If ad is available, show it
@@ -53,7 +57,7 @@ class SmartBannerAd extends StatelessWidget {
         }
 
         // If loading, show loading widget
-        if (adService.bannerAdLoading.value) {
+        if (isLoading) {
           return _buildAdContainer(
             loadingWidget ??
                 const SizedBox(
@@ -78,12 +82,13 @@ class SmartBannerAd extends StatelessWidget {
     final container = Container(
       alignment: Alignment.center,
       width: double.infinity,
-      decoration: useGlassEffect
-          ? null
-          : BoxDecoration(
-              borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
+      decoration:
+          useGlassEffect
+              ? null
+              : BoxDecoration(
+                borderRadius: BorderRadius.circular(borderRadius),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
         child: content,
@@ -92,10 +97,7 @@ class SmartBannerAd extends StatelessWidget {
 
     // Apply glass effect if enabled
     if (useGlassEffect) {
-      return GlassAdPanel(
-        borderRadius: borderRadius,
-        child: container,
-      );
+      return GlassAdPanel(borderRadius: borderRadius, child: container);
     }
 
     return container;

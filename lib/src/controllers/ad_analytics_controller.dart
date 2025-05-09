@@ -17,38 +17,42 @@ class AdAnalyticsController extends GetxController {
   final RxDouble fillRate = 0.0.obs;
   final RxDouble showRate = 0.0.obs;
   final RxMap<AdType, double> typeEcpm = <AdType, double>{}.obs;
-  final RxMap<AdType, int> loadAttempts = <AdType, int>{
-    AdType.banner: 0,
-    AdType.native: 0,
-    AdType.interstitial: 0,
-    AdType.rewarded: 0,
-    AdType.appOpen: 0,
-  }.obs;
-  final RxMap<AdType, int> loadSuccesses = <AdType, int>{
-    AdType.banner: 0,
-    AdType.native: 0,
-    AdType.interstitial: 0,
-    AdType.rewarded: 0,
-    AdType.appOpen: 0,
-  }.obs;
-  final RxMap<AdType, int> impressions = <AdType, int>{
-    AdType.banner: 0,
-    AdType.native: 0,
-    AdType.interstitial: 0,
-    AdType.rewarded: 0,
-    AdType.appOpen: 0,
-  }.obs;
-  final RxMap<AdType, int> clicks = <AdType, int>{
-    AdType.banner: 0,
-    AdType.native: 0,
-    AdType.interstitial: 0,
-    AdType.rewarded: 0,
-    AdType.appOpen: 0,
-  }.obs;
+  final RxMap<AdType, int> loadAttempts =
+      <AdType, int>{
+        AdType.banner: 0,
+        AdType.native: 0,
+        AdType.interstitial: 0,
+        AdType.rewarded: 0,
+        AdType.appOpen: 0,
+      }.obs;
+  final RxMap<AdType, int> loadSuccesses =
+      <AdType, int>{
+        AdType.banner: 0,
+        AdType.native: 0,
+        AdType.interstitial: 0,
+        AdType.rewarded: 0,
+        AdType.appOpen: 0,
+      }.obs;
+  final RxMap<AdType, int> impressions =
+      <AdType, int>{
+        AdType.banner: 0,
+        AdType.native: 0,
+        AdType.interstitial: 0,
+        AdType.rewarded: 0,
+        AdType.appOpen: 0,
+      }.obs;
+  final RxMap<AdType, int> clicks =
+      <AdType, int>{
+        AdType.banner: 0,
+        AdType.native: 0,
+        AdType.interstitial: 0,
+        AdType.rewarded: 0,
+        AdType.appOpen: 0,
+      }.obs;
 
   // Constructor
   AdAnalyticsController({required AnalyticsService analytics})
-      : _analytics = analytics;
+    : _analytics = analytics;
 
   @override
   void onInit() {
@@ -62,9 +66,10 @@ class AdAnalyticsController extends GetxController {
     for (final type in AdType.values) {
       if (type == AdType.none) continue;
 
-      typeEcpm[type] = type == AdType.rewarded
-          ? 10.0 // Default eCPM for rewarded ads
-          : type == AdType.interstitial
+      typeEcpm[type] =
+          type == AdType.rewarded
+              ? 10.0 // Default eCPM for rewarded ads
+              : type == AdType.interstitial
               ? 5.0 // Default eCPM for interstitials
               : 1.0; // Default for other ad types
     }
@@ -118,8 +123,10 @@ class AdAnalyticsController extends GetxController {
 
   /// Get overall click-through rate
   double getOverallCtr() {
-    final totalImpressions =
-        impressions.values.fold(0, (sum, count) => sum + count);
+    final totalImpressions = impressions.values.fold(
+      0,
+      (sum, count) => sum + count,
+    );
     final totalClicks = clicks.values.fold(0, (sum, count) => sum + count);
 
     if (totalImpressions == 0) return 0;
@@ -129,18 +136,24 @@ class AdAnalyticsController extends GetxController {
   /// Calculate fill rate, show rate and other derived metrics
   void _calculateDerivedMetrics() {
     // Calculate fill rate (loads / attempts)
-    final totalAttempts =
-        loadAttempts.values.fold(0, (sum, count) => sum + count);
-    final totalSuccesses =
-        loadSuccesses.values.fold(0, (sum, count) => sum + count);
+    final totalAttempts = loadAttempts.values.fold(
+      0,
+      (sum, count) => sum + count,
+    );
+    final totalSuccesses = loadSuccesses.values.fold(
+      0,
+      (sum, count) => sum + count,
+    );
 
     if (totalAttempts > 0) {
       fillRate.value = totalSuccesses / totalAttempts;
     }
 
     // Calculate show rate (impressions / loads)
-    final totalImpressions =
-        impressions.values.fold(0, (sum, count) => sum + count);
+    final totalImpressions = impressions.values.fold(
+      0,
+      (sum, count) => sum + count,
+    );
 
     if (totalSuccesses > 0) {
       showRate.value = totalImpressions / totalSuccesses;
@@ -182,5 +195,25 @@ class AdAnalyticsController extends GetxController {
     }
 
     _calculateDerivedMetrics();
+  }
+
+  /// Get total impressions across all ad types
+  int getImpressions() {
+    return impressions.values.fold(0, (sum, count) => sum + count);
+  }
+
+  /// Get total clicks across all ad types
+  int getClicks() {
+    return clicks.values.fold(0, (sum, count) => sum + count);
+  }
+
+  /// Get current fill rate value
+  double getFillRate() {
+    return fillRate.value;
+  }
+
+  /// Get current show rate value
+  double getShowRate() {
+    return showRate.value;
   }
 }

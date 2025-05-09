@@ -49,7 +49,7 @@ class InterstitialManager extends GetxController {
   /// Check if any interstitial is currently showing
   bool get isShowingAd => _isShowingAd.value;
 
-  /// Check if any interstitial ad is loaded
+  /// Check if any interstitial ad is loaded and ready to show
   bool get isAdLoaded => _loadedInterstitials.isNotEmpty;
 
   /// Load an interstitial ad
