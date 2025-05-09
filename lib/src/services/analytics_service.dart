@@ -85,10 +85,15 @@ class AnalyticsService extends GetxService {
       params['ecpm'] = event.ecpm;
     }
 
+    // Ensure all values in params are cast to Object
+    final sanitizedParams = params.map(
+      (key, value) => MapEntry(key, value as Object),
+    );
+
     // Add to batch
     _batchedEvents.add({
       'name': eventName,
-      'params': params,
+      'params': sanitizedParams,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     });
 
@@ -219,8 +224,8 @@ class AnalyticsService extends GetxService {
         try {
           await _firebaseAnalytics.logEvent(
             name: event['name'].toString(),
-            parameters: Map<String, Object>.from(
-              event['params'] as Map<String, dynamic>,
+            parameters: (event['params'] as Map<String, dynamic>).map(
+              (key, value) => MapEntry(key, value as Object),
             ),
           );
         } catch (e) {
@@ -258,8 +263,6 @@ class AnalyticsService extends GetxService {
         return 'ad_rewarded_$adTypeName';
       case AdEventType.leftApplication:
         return 'ad_left_app_$adTypeName';
-      default:
-        return 'ad_event_$adTypeName';
     }
   }
 

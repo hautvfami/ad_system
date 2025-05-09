@@ -29,7 +29,7 @@ class InterstitialManager extends GetxController {
 
   /// Constructor
   InterstitialManager({required AdAnalyticsController analytics})
-      : _analytics = analytics;
+    : _analytics = analytics;
 
   @override
   void onClose() {
@@ -48,6 +48,9 @@ class InterstitialManager extends GetxController {
 
   /// Check if any interstitial is currently showing
   bool get isShowingAd => _isShowingAd.value;
+
+  /// Check if any interstitial ad is loaded
+  bool get isAdLoaded => _loadedInterstitials.isNotEmpty;
 
   /// Load an interstitial ad
   Future<bool> loadInterstitial({
@@ -69,23 +72,26 @@ class InterstitialManager extends GetxController {
     _isLoading[placementName] = true;
 
     // Get ad unit ID
-    final adUnitId = placementName.contains('_')
-        ? AdIdProvider.getCustomPlacementId(
-            placementName: placementName,
-            useTestAds: useTestAds,
-          )
-        : AdIdProvider.getAdUnitId(
-            adType: AdType.interstitial,
-            useTestAds: useTestAds,
-          );
+    final adUnitId =
+        placementName.contains('_')
+            ? AdIdProvider.getCustomPlacementId(
+              placementName: placementName,
+              useTestAds: useTestAds,
+            )
+            : AdIdProvider.getAdUnitId(
+              adType: AdType.interstitial,
+              useTestAds: useTestAds,
+            );
 
     // Track request event
-    _analytics.trackAdEvent(AdEvent.requested(
-      AdType.interstitial,
-      adUnitId: adUnitId,
-      userSegment: userSegment,
-      isTestAd: useTestAds,
-    ));
+    _analytics.trackAdEvent(
+      AdEvent.requested(
+        AdType.interstitial,
+        adUnitId: adUnitId,
+        userSegment: userSegment,
+        isTestAd: useTestAds,
+      ),
+    );
 
     try {
       // Load interstitial ad
@@ -102,12 +108,14 @@ class InterstitialManager extends GetxController {
               onAdShowedFullScreenContent: (ad) {
                 _isShowingAd.value = true;
 
-                _analytics.trackAdEvent(AdEvent.impression(
-                  AdType.interstitial,
-                  adUnitId: adUnitId,
-                  userSegment: userSegment,
-                  isTestAd: useTestAds,
-                ));
+                _analytics.trackAdEvent(
+                  AdEvent.impression(
+                    AdType.interstitial,
+                    adUnitId: adUnitId,
+                    userSegment: userSegment,
+                    isTestAd: useTestAds,
+                  ),
+                );
               },
               onAdDismissedFullScreenContent: (ad) {
                 ad.dispose();
@@ -126,45 +134,53 @@ class InterstitialManager extends GetxController {
                 _loadedInterstitials.remove(placementName);
                 _isShowingAd.value = false;
 
-                _analytics.trackAdEvent(AdEvent.failed(
-                  AdType.interstitial,
-                  adUnitId: adUnitId,
-                  error: 'Failed to show: ${error.message}',
-                  errorCode: error.code,
-                  userSegment: userSegment,
-                  isTestAd: useTestAds,
-                ));
+                _analytics.trackAdEvent(
+                  AdEvent.failed(
+                    AdType.interstitial,
+                    adUnitId: adUnitId,
+                    error: 'Failed to show: ${error.message}',
+                    errorCode: error.code,
+                    userSegment: userSegment,
+                    isTestAd: useTestAds,
+                  ),
+                );
               },
               onAdClicked: (ad) {
-                _analytics.trackAdEvent(AdEvent.clicked(
-                  AdType.interstitial,
-                  adUnitId: adUnitId,
-                  userSegment: userSegment,
-                  isTestAd: useTestAds,
-                ));
+                _analytics.trackAdEvent(
+                  AdEvent.clicked(
+                    AdType.interstitial,
+                    adUnitId: adUnitId,
+                    userSegment: userSegment,
+                    isTestAd: useTestAds,
+                  ),
+                );
               },
             );
 
             // Track success event
-            _analytics.trackAdEvent(AdEvent.loaded(
-              AdType.interstitial,
-              adUnitId: adUnitId,
-              userSegment: userSegment,
-              isTestAd: useTestAds,
-            ));
+            _analytics.trackAdEvent(
+              AdEvent.loaded(
+                AdType.interstitial,
+                adUnitId: adUnitId,
+                userSegment: userSegment,
+                isTestAd: useTestAds,
+              ),
+            );
           },
           onAdFailedToLoad: (error) {
             _isLoading[placementName] = false;
 
             // Track failure event
-            _analytics.trackAdEvent(AdEvent.failed(
-              AdType.interstitial,
-              adUnitId: adUnitId,
-              error: error.message,
-              errorCode: error.code,
-              userSegment: userSegment,
-              isTestAd: useTestAds,
-            ));
+            _analytics.trackAdEvent(
+              AdEvent.failed(
+                AdType.interstitial,
+                adUnitId: adUnitId,
+                error: error.message,
+                errorCode: error.code,
+                userSegment: userSegment,
+                isTestAd: useTestAds,
+              ),
+            );
           },
         ),
       );
@@ -222,8 +238,8 @@ class InterstitialManager extends GetxController {
       }
 
       // Set callbacks and show
-      justLoadedInterstitial.fullScreenContentCallback =
-          FullScreenContentCallback(
+      justLoadedInterstitial
+          .fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (_) {
           _isShowingAd.value = true;
           onAdShown?.call();

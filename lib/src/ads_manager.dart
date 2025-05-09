@@ -128,12 +128,18 @@ class AdsManager {
 
     if (!Get.isRegistered<InterstitialManager>()) {
       final analytics = Get.find<AdAnalyticsController>();
-      Get.put(InterstitialManager(analytics: analytics), permanent: true);
+      _interstitialManager = Get.put(
+        InterstitialManager(analytics: analytics),
+        permanent: true,
+      );
     }
 
     if (!Get.isRegistered<RewardedManager>()) {
       final analytics = Get.find<AdAnalyticsController>();
-      Get.put(RewardedManager(analytics: analytics), permanent: true);
+      _rewardedManager = Get.put(
+        RewardedManager(analytics: analytics),
+        permanent: true,
+      );
     }
 
     if (!Get.isRegistered<NativeAdManager>()) {
@@ -221,37 +227,57 @@ class AdsManager {
     Function()? onAdDismissed,
     Function(String error)? onAdFailedToShow,
   }) async {
-    _requireInitialization();
+    try {
+      _requireInitialization();
+      print('[AdsManager] Initialization check passed.');
 
-    // Check if ad should be shown based on frequency caps and segmentation
-    if (!_canShowAdType(AdType.interstitial)) {
+      // Check if ad should be shown based on frequency caps and segmentation
+      if (!_canShowAdType(AdType.interstitial)) {
+        final error = 'Ad not allowed by frequency or segmentation rules';
+        print('[AdsManager] $error');
+        if (onAdFailedToShow != null) {
+          onAdFailedToShow(error);
+        }
+        return false;
+      }
+
+      // Get user segment for analytics
+      final userSegment = _segmentationController.currentSegment.value;
+      print('[AdsManager] User segment: $userSegment');
+
+      // Show the ad using the specialized manager
+      final result = await _interstitialManager.showInterstitial(
+        placementName: placementName,
+        userSegment: userSegment,
+        onAdDismissed: () {
+          print('[AdsManager] Interstitial ad dismissed.');
+          // Update frequency counter
+          _frequencyController.incrementAdCount(AdType.interstitial);
+          // Re-evaluate user segment
+          _segmentationController.evaluateSegmentChange();
+
+          if (onAdDismissed != null) {
+            onAdDismissed();
+          }
+        },
+        onAdFailedToShow: (error) {
+          print('[AdsManager] Failed to show interstitial ad: $error');
+          if (onAdFailedToShow != null) {
+            onAdFailedToShow(error);
+          }
+        },
+      );
+
+      print('[AdsManager] Interstitial ad show result: $result');
+      return result;
+    } catch (e, stackTrace) {
+      print('[AdsManager] Exception in showInterstitialAd: $e');
+      print(stackTrace);
       if (onAdFailedToShow != null) {
-        onAdFailedToShow('Ad not allowed by frequency or segmentation rules');
+        onAdFailedToShow(e.toString());
       }
       return false;
     }
-
-    // Get user segment for analytics
-    final userSegment = _segmentationController.currentSegment.value;
-
-    // Show the ad using the specialized manager
-    final result = await _interstitialManager.showInterstitial(
-      placementName: placementName,
-      userSegment: userSegment,
-      onAdDismissed: () {
-        // Update frequency counter
-        _frequencyController.incrementAdCount(AdType.interstitial);
-        // Re-evaluate user segment
-        _segmentationController.evaluateSegmentChange();
-
-        if (onAdDismissed != null) {
-          onAdDismissed();
-        }
-      },
-      onAdFailedToShow: onAdFailedToShow,
-    );
-
-    return result;
   }
 
   /// Shows a rewarded ad if available
@@ -351,6 +377,12 @@ class AdsManager {
     );
 
     return ad;
+  }
+
+  /// Checks if the interstitial ad is loaded
+  bool get isInterstitialAdLoaded {
+    _requireInitialization();
+    return _interstitialManager.isAdLoaded;
   }
 
   /// Check if an ad type can be shown based on frequency and segmentation
