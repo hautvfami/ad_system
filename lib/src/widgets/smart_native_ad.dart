@@ -116,10 +116,11 @@ class _SmartNativeAdState extends State<SmartNativeAd> {
         options = widget.customOptions;
       }
     }
-    
+
     // Make sure we have adUnitId debug info
     options = {
-      'adDebugInfo': 'placement=${widget.placementName}, template=${widget.template}',
+      'adDebugInfo':
+          'placement=${widget.placementName}, template=${widget.template}',
       ...(options ?? {}),
     };
 
@@ -136,7 +137,9 @@ class _SmartNativeAdState extends State<SmartNativeAd> {
               _nativeAd = ad as NativeAd;
               _isLoading = false;
             });
-            debugPrint('SmartNativeAd: Ad loaded successfully with id: ${(ad as NativeAd).adUnitId}');
+            debugPrint(
+              'SmartNativeAd: Ad loaded successfully with id: ${(ad as NativeAd).adUnitId}',
+            );
           }
         },
         onAdFailedToLoad: (error) {

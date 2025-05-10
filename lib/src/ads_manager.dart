@@ -394,7 +394,8 @@ class AdsManager {
         template: template,
         userSegment: userSegment,
         customOptions: themeOptions,
-        context: context, // Pass the context parameter for theme extraction and error handling
+        context:
+            context, // Pass the context parameter for theme extraction and error handling
         onAdLoaded: (ad) {
           _frequencyController.incrementAdCount(AdType.native);
           if (onAdLoaded != null) {
@@ -408,12 +409,12 @@ class AdsManager {
           }
         },
       );
-      
+
       // If ad is null but no error was reported through the callback
       if (ad == null && onAdFailedToLoad != null) {
         onAdFailedToLoad('Failed to load native ad (no ad returned)');
       }
-      
+
       return ad;
     } catch (e) {
       debugPrint('[AdsManager] Exception loading native ad: $e');

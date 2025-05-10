@@ -32,7 +32,7 @@ class _ThemedNativeAdExampleState extends State<ThemedNativeAdExample> {
             ),
           ],
         ),
-        body: Padding(
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,6 +71,7 @@ class _ThemedNativeAdExampleState extends State<ThemedNativeAdExample> {
                   child: AdsManager.instance.createThemedNativeAdContainer(
                     context: context,
                     nativeAd: _nativeAd!,
+                    padding: EdgeInsets.zero,
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
@@ -92,7 +93,8 @@ class _ThemedNativeAdExampleState extends State<ThemedNativeAdExample> {
     AdsManager.instance.loadThemedNativeAd(
       context: context,
       placementName: 'manual_themed_example',
-      template: 'medium',
+      template: 'custom',
+      additionalCustomOptions: {},
       onAdLoaded: (ad) {
         setState(() {
           _nativeAd = ad as NativeAd;

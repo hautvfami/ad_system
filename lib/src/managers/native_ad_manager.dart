@@ -68,16 +68,20 @@ class NativeAdManager extends GetxController {
   }) async {
     // Check if we're already loading this ad
     if (_isLoading[placementName] == true) {
-      debugPrint('NativeAdManager: Already loading ad for $placementName, skipping');
+      debugPrint(
+        'NativeAdManager: Already loading ad for $placementName, skipping',
+      );
       return null;
     }
 
     // Maximum retry attempts
     const int maxRetries = 2;
-    
+
     // Mark as loading
     _isLoading[placementName] = true;
-    debugPrint('NativeAdManager: Loading native ad for $placementName (try ${retryCount+1}/${maxRetries+1})');
+    debugPrint(
+      'NativeAdManager: Loading native ad for $placementName (try ${retryCount + 1}/${maxRetries + 1})',
+    );
 
     // Get ad unit ID
     String adUnitId =
@@ -90,23 +94,24 @@ class NativeAdManager extends GetxController {
               adType: AdType.native,
               useTestAds: useTestAds,
             );
-            
+
     // Make sure we have a valid ad unit ID
     if (adUnitId.isEmpty) {
       // Log the error
       print('NativeAdManager: Empty ad unit ID for placement: $placementName');
-      
+
       // Fall back to test ad unit ID
       adUnitId = AdIdProvider.getAdUnitId(
-        adType: AdType.native, 
-        useTestAds: true
+        adType: AdType.native,
+        useTestAds: true,
       );
-      
+
       if (adUnitId.isEmpty) {
         // Hard-code the Google test ID as a last resort
-        adUnitId = Platform.isAndroid 
-            ? 'ca-app-pub-3940256099942544/2247696110' 
-            : 'ca-app-pub-3940256099942544/3986624511';
+        adUnitId =
+            Platform.isAndroid
+                ? 'ca-app-pub-3940256099942544/2247696110'
+                : 'ca-app-pub-3940256099942544/3986624511';
       }
     }
 
@@ -201,11 +206,11 @@ class NativeAdManager extends GetxController {
       // Handle error
       debugPrint('NativeAdManager: Error loading native ad: $e');
       _isLoading[placementName] = false;
-      
+
       // Try again with a different test ad unit ID if this is a test ad and we haven't reached max retries
       if (useTestAds && retryCount < 2) {
         onAdFailedToLoad?.call("Retrying with different ad unit ID...");
-        
+
         // Use the hard-coded test ad unit ID for the retry
         return loadNativeAd(
           placementName: placementName,
@@ -219,7 +224,7 @@ class NativeAdManager extends GetxController {
           retryCount: retryCount + 1,
         );
       }
-      
+
       onAdFailedToLoad?.call(e.toString());
       return null;
     }
