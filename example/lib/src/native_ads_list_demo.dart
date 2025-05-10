@@ -67,9 +67,11 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
   void _loadAd(int adIndex) {
     // Chuyển đổi adIndex thành vị trí hiển thị thực tế trong ListView
     final int listViewIndex = _getListViewIndexFromAdIndex(adIndex);
-    
-    debugPrint('Đang tải quảng cáo cho adIndex=$adIndex, vị trí trong ListView: $listViewIndex');
-    
+
+    debugPrint(
+      'Đang tải quảng cáo cho adIndex=$adIndex, vị trí trong ListView: $listViewIndex',
+    );
+
     if (_loadedAds.containsKey(listViewIndex)) {
       debugPrint('Quảng cáo cho vị trí $listViewIndex đã được tải rồi!');
       return; // Đã tải quảng cáo này rồi
@@ -82,14 +84,16 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
       placementName: 'list_native_$adIndex',
       template: 'medium',
       onAdLoaded: (ad) {
-        debugPrint('✅ Quảng cáo cho vị trí ListView $listViewIndex (adIndex=$adIndex) đã tải THÀNH CÔNG');
+        debugPrint(
+          '✅ Quảng cáo cho vị trí ListView $listViewIndex (adIndex=$adIndex) đã tải THÀNH CÔNG',
+        );
         // Lưu quảng cáo với key chính là vị trí trong ListView
         _loadedAds[listViewIndex] = ad;
         _lastResult.value = 'Đã tải quảng cáo cho vị trí $listViewIndex';
-        
+
         // Hiển thị thông tin debug
         _debugAdsStatus();
-        
+
         setState(() {}); // Cập nhật UI
       },
       onAdFailedToLoad: (error) {
@@ -134,15 +138,17 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
     int adCount = (_items.length / _adInterval).floor();
     // Tổng số mục = số lượng nội dung + số lượng quảng cáo
     int total = _items.length + adCount;
-    debugPrint('Tổng số mục: $total (${_items.length} nội dung + $adCount quảng cáo)');
+    debugPrint(
+      'Tổng số mục: $total (${_items.length} nội dung + $adCount quảng cáo)',
+    );
     return total;
   }
-  
+
   // Chuyển đổi từ adIndex sang vị trí thực trong ListView
   int _getListViewIndexFromAdIndex(int adIndex) {
     return (adIndex + 1) * (_adInterval + 1) - 1;
   }
-  
+
   // Lấy adIndex từ vị trí ListView
   int _getAdIndexFromListViewIndex(int listViewIndex) {
     return listViewIndex ~/ (_adInterval + 1);
@@ -152,16 +158,16 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
   void _reloadVisibleAds() {
     debugPrint('Đang tải lại quảng cáo...');
     _isLoading.value = true;
-    
+
     // Xóa quảng cáo đã tải
     for (final ad in _loadedAds.values) {
       ad.dispose();
     }
     _loadedAds.clear();
-    
+
     // Tải lại quảng cáo
     _preloadAds();
-    
+
     // Hiện thông báo
     _lastResult.value = 'Đã tải lại quảng cáo';
     setState(() {});
@@ -205,21 +211,27 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontStyle: FontStyle.italic),
                     ),
-                    if (_loadedAds.isNotEmpty) 
+                    if (_loadedAds.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Column(
                           children: [
                             Text(
                               'Đã tải ${_loadedAds.length} quảng cáo ở vị trí: ${_loadedAds.keys.join(", ")}',
-                              style: const TextStyle(fontSize: 12, color: Colors.blue),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             ElevatedButton.icon(
                               icon: const Icon(Icons.refresh, size: 16),
                               label: const Text('Tải lại tất cả quảng cáo'),
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 textStyle: const TextStyle(fontSize: 13),
                               ),
                               onPressed: _reloadVisibleAds,
@@ -243,10 +255,14 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
                   debugPrint('Đang hiển thị vị trí quảng cáo $index');
                   // Kiểm tra xem quảng cáo đã được tải chưa
                   // Hiển thị debug info về quảng cáo đã tải
-                  debugPrint('Kiểm tra quảng cáo cho vị trí $index. Ads đã tải: ${_loadedAds.keys.toList()}');
-                  
+                  debugPrint(
+                    'Kiểm tra quảng cáo cho vị trí $index. Ads đã tải: ${_loadedAds.keys.toList()}',
+                  );
+
                   if (_loadedAds.containsKey(index)) {
-                    debugPrint('Đã tìm thấy quảng cáo đã tải cho vị trí $index!');
+                    debugPrint(
+                      'Đã tìm thấy quảng cáo đã tải cho vị trí $index!',
+                    );
                     // Hiển thị quảng cáo đã được tải
                     return Card(
                       margin: const EdgeInsets.all(8),
@@ -261,7 +277,9 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
                     // Tải quảng cáo cho vị trí này nếu chưa được tải
                     // Tính vị trí quảng cáo dựa trên thứ tự đúng
                     int adIndex = _getAdIndexFromListViewIndex(index);
-                    debugPrint('Chưa tìm thấy quảng cáo cho vị trí $index. Tính adIndex: $adIndex');
+                    debugPrint(
+                      'Chưa tìm thấy quảng cáo cho vị trí $index. Tính adIndex: $adIndex',
+                    );
                     _loadAd(adIndex);
 
                     // Hiển thị placeholder trong khi chờ tải
@@ -282,8 +300,12 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
                               icon: const Icon(Icons.refresh),
                               label: const Text('Thử lại'),
                               onPressed: () {
-                                int adIndex = _getAdIndexFromListViewIndex(index);
-                                debugPrint('Thử tải lại quảng cáo cho adIndex: $adIndex, vị trí: $index');
+                                int adIndex = _getAdIndexFromListViewIndex(
+                                  index,
+                                );
+                                debugPrint(
+                                  'Thử tải lại quảng cáo cho adIndex: $adIndex, vị trí: $index',
+                                );
                                 _loadAd(adIndex);
                               },
                             ),
