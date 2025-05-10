@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:ad_system/ad_system.dart';
 import 'package:get/get.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
+import 'native_ads_list_demo.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -176,7 +179,41 @@ class _AdDemoPageState extends State<AdDemoPage> {
       onAdLoaded: (ad) {
         _lastAdResult.value = 'Native Ad đã được tải thành công';
         _isLoading.value = false;
-        // Trong trường hợp thực tế, bạn sẽ hiển thị quảng cáo ở đây
+
+        // Hiển thị quảng cáo trong một dialog để người dùng có thể thấy
+        showDialog(
+          context: context,
+          builder:
+              (context) => Dialog(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Native Ad Example',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: double.maxFinite,
+                      height: 300,
+                      child: AdWidget(ad: ad),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Đóng'),
+                    ),
+                    SizedBox(height: 8),
+                  ],
+                ),
+              ),
+        );
       },
       onAdFailedToLoad: (error) {
         _lastAdResult.value = 'Không thể tải Native Ad: $error';
@@ -269,6 +306,23 @@ class _AdDemoPageState extends State<AdDemoPage> {
             : 'Đã chuyển sang chế độ thường (có hiển thị quảng cáo)';
 
     _logAdLimits(AdType.interstitial);
+  }
+
+  // Best practice: Chuyển đến trang demo danh sách với quảng cáo xen kẽ
+  void _showNativeAdsInListView() {
+    if (!_isInitialized.value) {
+      _lastAdResult.value = 'Ads chưa được khởi tạo. Vui lòng đợi...';
+      return;
+    }
+
+    _logAdLimits(AdType.native);
+    _lastAdResult.value =
+        'Đang chuẩn bị hiển thị danh sách với quảng cáo xen kẽ...';
+
+    // Hiển thị trang mới với ListView có quảng cáo xen kẽ
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const NativeAdsListViewDemo()),
+    );
   }
 
   @override
@@ -414,6 +468,11 @@ class _AdDemoPageState extends State<AdDemoPage> {
                                   title: 'Tải và hiển thị Native Ad',
                                   onPressed: _loadAndShowNativeAd,
                                   icon: Icons.snippet_folder,
+                                ),
+                                _buildAdButton(
+                                  title: 'Native Ads xen kẽ trong ListView',
+                                  onPressed: _showNativeAdsInListView,
+                                  icon: Icons.list_alt,
                                 ),
                               ],
                             ),

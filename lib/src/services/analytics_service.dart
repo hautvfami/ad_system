@@ -18,7 +18,7 @@ class AnalyticsService extends GetxService {
   static const int _maxEventsBatchSize = 10;
 
   // Batched events that haven't been sent yet
-  final List<Map<String, dynamic>> _batchedEvents = [];
+  final List<Map<String, Object>> _batchedEvents = [];
 
   // Basic counters for quick in-memory analytics
   final RxMap<String, int> _eventCounts = <String, int>{}.obs;
