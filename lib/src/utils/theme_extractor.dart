@@ -1,0 +1,153 @@
+import 'package:flutter/material.dart';
+
+/// A utility class for extracting theme colors and styles from Flutter theme
+/// to pass to native ad platforms.
+class ThemeExtractor {
+  /// Converts a Color to a hex string that can be used by native platforms
+  static String colorToHex(Color color) {
+    return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+  }
+
+  /// Provides default theme values when the theme can't be accessed
+  static Map<String, dynamic> _getDefaultTheme() {
+    return {
+      // Background (transparent by default)
+      'backgroundColor': '#00000000',
+
+      // Default text colors (dark text on light background)
+      'headlineTextColor': '#FF000000', // Black
+      'headlineTextSize': 16.0,
+      'bodyTextColor': '#FF666666', // Dark gray
+      'bodyTextSize': 14.0,
+
+      // Button styling
+      'buttonBackgroundColor': '#FF6200EE', // Material purple
+      'buttonTextColor': '#FFFFFFFF', // White
+      'buttonTextSize': 14.0,
+      'buttonCornerRadius': 8.0,
+
+      // Sponsored label
+      'sponsoredLabelColor': '#FF666666',
+      'sponsoredLabelBackgroundColor': '#11000000',
+
+      // Styling
+      'mediaCornerRadius': 8.0,
+      'containerCornerRadius': 12.0,
+    };
+  }
+
+  /// Extracts theme information from the current theme context and formats it for native ads
+  static Map<String, dynamic> extractNativeAdTheme(BuildContext context) {
+    // Handle potential errors when accessing theme during initialization
+    ThemeData? theme;
+    try {
+      theme = Theme.of(context);
+    } catch (e) {
+      debugPrint('ThemeExtractor: Error accessing theme - $e');
+      // Return default values if theme can't be accessed
+      return _getDefaultTheme();
+    }
+
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    // Get background color from the surface with transparency
+    final backgroundColor = colorToHex(Colors.transparent);
+
+    // Convert Flutter text themes to appropriate native ad styles
+    return {
+      // Background (transparent by default to let Flutter control the background)
+      'backgroundColor': backgroundColor,
+
+      // Headline styling
+      'headlineTextColor': colorToHex(colorScheme.onSurface),
+      'headlineTextSize': textTheme.titleMedium?.fontSize ?? 16.0,
+
+      // Body text styling
+      'bodyTextColor': colorToHex(colorScheme.onSurfaceVariant),
+      'bodyTextSize': textTheme.bodyMedium?.fontSize ?? 14.0,
+
+      // Button styling with the primary color
+      'buttonBackgroundColor': colorToHex(colorScheme.primary),
+      'buttonTextColor': colorToHex(colorScheme.onPrimary),
+      'buttonTextSize': textTheme.labelLarge?.fontSize ?? 14.0,
+      'buttonCornerRadius': 8.0, // Default corner radius
+      // Sponsored label styling
+      'sponsoredLabelColor': colorToHex(colorScheme.onSurfaceVariant),
+      'sponsoredLabelBackgroundColor': colorToHex(
+        colorScheme.surfaceVariant.withOpacity(0.6),
+      ),
+
+      // Media content styling
+      'mediaCornerRadius': 8.0,
+
+      // Container styling
+      'containerCornerRadius': 12.0,
+    };
+  }
+
+  /// Creates a dark theme version of native ad styling
+  static Map<String, dynamic> extractDarkNativeAdTheme(BuildContext context) {
+    // Handle potential errors when accessing theme during initialization
+    ThemeData? theme;
+    try {
+      theme = Theme.of(context);
+    } catch (e) {
+      debugPrint('ThemeExtractor: Error accessing theme - $e');
+      // Return default dark values if theme can't be accessed
+      return {
+        ..._getDefaultTheme(),
+        'headlineTextColor': '#FFFFFFFF', // White
+        'bodyTextColor': '#FFCCCCCC', // Light gray
+        'sponsoredLabelColor': '#FFCCCCCC', // Light gray
+        'sponsoredLabelBackgroundColor': '#33FFFFFF', // Semi-transparent white
+      };
+    }
+
+    final colorScheme = theme.colorScheme;
+
+    // Base styling from regular theme
+    final baseTheme = extractNativeAdTheme(context);
+
+    // Override with dark-specific options
+    return {
+      ...baseTheme,
+      // Make sure text colors are visible against dark backgrounds
+      'headlineTextColor': colorToHex(colorScheme.onSurface),
+      'bodyTextColor': colorToHex(colorScheme.onSurfaceVariant),
+
+      // Sponsor label with higher contrast
+      'sponsoredLabelColor': colorToHex(colorScheme.onSurfaceVariant),
+      'sponsoredLabelBackgroundColor': colorToHex(
+        colorScheme.surfaceVariant.withOpacity(0.8),
+      ),
+    };
+  }
+
+  /// Creates a custom theme version based on provided colors
+  static Map<String, dynamic> createCustomNativeAdTheme({
+    required Color backgroundColor,
+    required Color headlineTextColor,
+    required Color bodyTextColor,
+    required Color buttonBackgroundColor,
+    required Color buttonTextColor,
+    double? headlineTextSize,
+    double? bodyTextSize,
+    double? buttonTextSize,
+    double? buttonCornerRadius,
+    double? containerCornerRadius,
+  }) {
+    return {
+      'backgroundColor': colorToHex(backgroundColor),
+      'headlineTextColor': colorToHex(headlineTextColor),
+      'bodyTextColor': colorToHex(bodyTextColor),
+      'buttonBackgroundColor': colorToHex(buttonBackgroundColor),
+      'buttonTextColor': colorToHex(buttonTextColor),
+      'headlineTextSize': headlineTextSize ?? 16.0,
+      'bodyTextSize': bodyTextSize ?? 14.0,
+      'buttonTextSize': buttonTextSize ?? 14.0,
+      'buttonCornerRadius': buttonCornerRadius ?? 8.0,
+      'containerCornerRadius': containerCornerRadius ?? 12.0,
+    };
+  }
+}

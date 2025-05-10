@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'native_ads_list_demo.dart';
+import 'themed_native_ad_example.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -325,6 +326,23 @@ class _AdDemoPageState extends State<AdDemoPage> {
     );
   }
 
+  // Hiển thị trang demo quảng cáo native theo chủ đề
+  void _showThemedNativeAdExample() {
+    if (!_isInitialized.value) {
+      _lastAdResult.value = 'Ads chưa được khởi tạo. Vui lòng đợi...';
+      return;
+    }
+
+    _logAdLimits(AdType.native);
+    _lastAdResult.value =
+        'Đang chuẩn bị hiển thị quảng cáo native theo chủ đề...';
+
+    // Hiển thị trang mới với quảng cáo native theo chủ đề
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const ThemedNativeAdExample()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -473,6 +491,11 @@ class _AdDemoPageState extends State<AdDemoPage> {
                                   title: 'Native Ads xen kẽ trong ListView',
                                   onPressed: _showNativeAdsInListView,
                                   icon: Icons.list_alt,
+                                ),
+                                _buildAdButton(
+                                  title: 'Quảng cáo Native theo chủ đề',
+                                  onPressed: _showThemedNativeAdExample,
+                                  icon: Icons.color_lens,
                                 ),
                               ],
                             ),

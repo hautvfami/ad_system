@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.google.android.gms.ads.nativead.MediaView
 import com.google.android.gms.ads.nativead.NativeAd
@@ -58,6 +59,9 @@ class CustomNativeAdFactory(private val context: Context) : NativeAdFactory {
         }
         nativeAdView.iconView = iconView
 
+        // Get sponsored label to customize
+        val sponsoredLabel = nativeAdView.findViewById<TextView>(R.id.ad_sponsored)
+        
         // Apply additional customizations from options if provided
         customOptions?.let {
             // Apply background color (transparent by default)
@@ -72,28 +76,68 @@ class CustomNativeAdFactory(private val context: Context) : NativeAdFactory {
                 }
             }
 
-            // Apply text styles
-            if (it.containsKey("textColor")) {
-                val textColor = it["textColor"] as? String
+            // Apply headline text styles
+            if (it.containsKey("headlineTextColor")) {
+                val textColor = it["headlineTextColor"] as? String
                 textColor?.let { color ->
                     try {
-                        val parsedColor = android.graphics.Color.parseColor(color)
-                        headlineView.setTextColor(parsedColor)
-                        bodyView.setTextColor(parsedColor)
+                        headlineView.setTextColor(android.graphics.Color.parseColor(color))
                     } catch (e: IllegalArgumentException) {
                         // Invalid color format
                     }
                 }
             }
+            
+            if (it.containsKey("headlineTextSize")) {
+                val textSize = it["headlineTextSize"] as? Float
+                textSize?.let { size ->
+                    headlineView.textSize = size
+                }
+            }
 
-            // Apply button style
-            if (it.containsKey("buttonBackgroundColor") && it.containsKey("buttonTextColor")) {
+            // Apply body text styles
+            if (it.containsKey("bodyTextColor")) {
+                val textColor = it["bodyTextColor"] as? String
+                textColor?.let { color ->
+                    try {
+                        bodyView.setTextColor(android.graphics.Color.parseColor(color))
+                    } catch (e: IllegalArgumentException) {
+                        // Invalid color format
+                    }
+                }
+            }
+            
+            if (it.containsKey("bodyTextSize")) {
+                val textSize = it["bodyTextSize"] as? Float
+                textSize?.let { size ->
+                    bodyView.textSize = size
+                }
+            }
+
+            // Apply button styles
+            if (it.containsKey("buttonBackgroundColor")) {
                 try {
                     val btnBgColor = it["buttonBackgroundColor"] as? String
+                    if (btnBgColor != null) {
+                        // Create new drawable with custom color
+                        val gd = android.graphics.drawable.GradientDrawable()
+                        gd.setColor(android.graphics.Color.parseColor(btnBgColor))
+                        
+                        // Use existing corner radius or default
+                        val cornerRadius = it["buttonCornerRadius"] as? Float ?: 8f
+                        gd.cornerRadius = cornerRadius
+                        
+                        callToActionView.background = gd
+                    }
+                } catch (e: IllegalArgumentException) {
+                    // Invalid color format
+                }
+            }
+            
+            if (it.containsKey("buttonTextColor")) {
+                try {
                     val btnTextColor = it["buttonTextColor"] as? String
-                    
-                    if (btnBgColor != null && btnTextColor != null) {
-                        callToActionView.setBackgroundColor(android.graphics.Color.parseColor(btnBgColor))
+                    if (btnTextColor != null) {
                         callToActionView.setTextColor(android.graphics.Color.parseColor(btnTextColor))
                     }
                 } catch (e: IllegalArgumentException) {
@@ -101,18 +145,42 @@ class CustomNativeAdFactory(private val context: Context) : NativeAdFactory {
                 }
             }
             
-            // Apply corner radius to button if provided
-            if (it.containsKey("buttonCornerRadius")) {
+            if (it.containsKey("buttonTextSize")) {
+                val textSize = it["buttonTextSize"] as? Float
+                textSize?.let { size ->
+                    callToActionView.textSize = size
+                }
+            }
+            
+            // Customize sponsored label
+            if (it.containsKey("sponsoredLabelColor")) {
                 try {
-                    val radius = it["buttonCornerRadius"] as? Float
-                    if (radius != null) {
-                        val gd = android.graphics.drawable.GradientDrawable()
-                        gd.setColor(callToActionView.solidColor)
-                        gd.cornerRadius = radius
-                        callToActionView.background = gd
+                    val labelColor = it["sponsoredLabelColor"] as? String
+                    if (labelColor != null) {
+                        sponsoredLabel.setTextColor(android.graphics.Color.parseColor(labelColor))
                     }
-                } catch (e: Exception) {
-                    // Error setting corner radius
+                } catch (e: IllegalArgumentException) {
+                    // Invalid color format
+                }
+            }
+            
+            if (it.containsKey("sponsoredLabelBackgroundColor")) {
+                try {
+                    val bgColor = it["sponsoredLabelBackgroundColor"] as? String
+                    if (bgColor != null) {
+                        sponsoredLabel.setBackgroundColor(android.graphics.Color.parseColor(bgColor))
+                    }
+                } catch (e: IllegalArgumentException) {
+                    // Invalid color format
+                }
+            }
+            
+            // Add padding to main container if specified
+            if (it.containsKey("padding")) {
+                val padding = it["padding"] as? Int
+                padding?.let { p ->
+                    val mainContainer = nativeAdView.findViewById<LinearLayout>(android.R.id.content)
+                    mainContainer?.setPadding(p, p, p, p)
                 }
             }
         }

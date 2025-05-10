@@ -36,23 +36,76 @@ class CustomNativeAdFactory : FLTNativeAdFactory {
         (nativeAdView.callToActionView as! UIButton).setTitle(nativeAd.callToAction, for: .normal)
         nativeAdView.callToActionView!.isUserInteractionEnabled = false
         
+        // Make background transparent by default
+        let containerView = nativeAdView.subviews.first
+        containerView?.backgroundColor = .clear
+        
         // Apply any custom styling from options
         if let customOptions = customOptions {
+            // Background
             if let backgroundColor = customOptions["backgroundColor"] as? String {
                 // Apply custom background color
-                let containerView = nativeAdView.subviews.first
                 containerView?.backgroundColor = colorFromHexString(backgroundColor)
             }
             
-            if let textColor = customOptions["textColor"] as? String {
-                // Apply custom text color to headline and body
-                (nativeAdView.headlineView as! UILabel).textColor = colorFromHexString(textColor)
-                (nativeAdView.bodyView as! UILabel).textColor = colorFromHexString(textColor)
+            // Headline styling
+            let headlineLabel = nativeAdView.headlineView as! UILabel
+            if let headlineTextColor = customOptions["headlineTextColor"] as? String {
+                headlineLabel.textColor = colorFromHexString(headlineTextColor)
+            }
+            if let headlineTextSize = customOptions["headlineTextSize"] as? CGFloat {
+                headlineLabel.font = .systemFont(ofSize: headlineTextSize, weight: .bold)
             }
             
-            if let buttonColor = customOptions["buttonColor"] as? String {
-                // Apply custom button color
-                (nativeAdView.callToActionView as! UIButton).backgroundColor = colorFromHexString(buttonColor)
+            // Body styling
+            let bodyLabel = nativeAdView.bodyView as! UILabel
+            if let bodyTextColor = customOptions["bodyTextColor"] as? String {
+                bodyLabel.textColor = colorFromHexString(bodyTextColor)
+            }
+            if let bodyTextSize = customOptions["bodyTextSize"] as? CGFloat {
+                bodyLabel.font = .systemFont(ofSize: bodyTextSize)
+            }
+            
+            // Button styling
+            let actionButton = nativeAdView.callToActionView as! UIButton
+            if let buttonBackgroundColor = customOptions["buttonBackgroundColor"] as? String {
+                actionButton.backgroundColor = colorFromHexString(buttonBackgroundColor)
+            }
+            if let buttonTextColor = customOptions["buttonTextColor"] as? String {
+                actionButton.setTitleColor(colorFromHexString(buttonTextColor), for: .normal)
+            }
+            if let buttonTextSize = customOptions["buttonTextSize"] as? CGFloat {
+                actionButton.titleLabel?.font = .systemFont(ofSize: buttonTextSize, weight: .medium)
+            }
+            if let buttonCornerRadius = customOptions["buttonCornerRadius"] as? CGFloat {
+                actionButton.layer.cornerRadius = buttonCornerRadius
+                actionButton.clipsToBounds = true
+            } else {
+                // Default corner radius
+                actionButton.layer.cornerRadius = 8.0
+                actionButton.clipsToBounds = true
+            }
+            
+            // Sponsored label customization
+            if let sponsoredLabel = nativeAdView.viewWithTag(100) as? UILabel {
+                if let sponsoredTextColor = customOptions["sponsoredLabelColor"] as? String {
+                    sponsoredLabel.textColor = colorFromHexString(sponsoredTextColor)
+                }
+                if let sponsoredBgColor = customOptions["sponsoredLabelBackgroundColor"] as? String {
+                    sponsoredLabel.backgroundColor = colorFromHexString(sponsoredBgColor)
+                }
+            }
+            
+            // Media view corner radius
+            if let mediaCornerRadius = customOptions["mediaCornerRadius"] as? CGFloat {
+                nativeAdView.mediaView?.layer.cornerRadius = mediaCornerRadius
+                nativeAdView.mediaView?.clipsToBounds = true
+            }
+            
+            // Overall corner radius
+            if let containerCornerRadius = customOptions["containerCornerRadius"] as? CGFloat {
+                containerView?.layer.cornerRadius = containerCornerRadius
+                containerView?.clipsToBounds = true
             }
         }
         

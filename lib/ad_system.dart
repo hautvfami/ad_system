@@ -3,6 +3,8 @@ export 'src/ads_manager.dart';
 export 'src/models/ad_types.dart';
 export 'src/models/ad_config.dart';
 export 'src/models/user_segment.dart';
+export 'src/extensions/ads_manager_theme_extensions.dart';
+export 'src/utils/theme_extractor.dart';
 
 // lib/widgets.dart
 export 'src/widgets/smart_banner_ad.dart';

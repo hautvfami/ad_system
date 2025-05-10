@@ -1,6 +1,7 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import './controllers/ad_analytics_controller.dart';
@@ -20,6 +21,7 @@ import './services/ad_service.dart';
 import './services/analytics_service.dart';
 import './services/remote_config_service.dart';
 import './services/revenue_attribution.dart';
+import './utils/theme_extractor.dart';
 
 /// Main entry point for the ad system - a facade that provides easy access
 /// to all ad functionality while hiding implementation details.
@@ -353,6 +355,8 @@ class AdsManager {
     String template = 'medium',
     Function(dynamic ad)? onAdLoaded,
     Function(String error)? onAdFailedToLoad,
+    BuildContext? context,
+    Map<String, Object>? customOptions,
   }) async {
     _requireInitialization();
 
@@ -369,21 +373,55 @@ class AdsManager {
     // Get user segment for analytics
     final userSegment = _segmentationController.currentSegment.value;
 
-    // Load the ad using the specialized manager
-    final ad = await _nativeAdManager.loadNativeAd(
-      placementName: placementName,
-      template: template,
-      userSegment: userSegment,
-      onAdLoaded: (ad) {
-        _frequencyController.incrementAdCount(AdType.native);
-        if (onAdLoaded != null) {
-          onAdLoaded(ad);
-        }
-      },
-      onAdFailedToLoad: onAdFailedToLoad,
-    );
+    // If context is provided, extract theme information for native ads
+    Map<String, Object>? themeOptions;
+    if (context != null) {
+      // Import the ThemeExtractor here to avoid unused import warnings
+      themeOptions = Map<String, Object>.from(
+        (customOptions ?? {})..addAll(
+          ThemeExtractor.extractNativeAdTheme(context) as Map<String, Object>,
+        ),
+      );
+    } else {
+      themeOptions = customOptions;
+    }
 
-    return ad;
+    // Debug logging for ad unit ID issues
+    try {
+      // Load the ad using the specialized manager
+      final ad = await _nativeAdManager.loadNativeAd(
+        placementName: placementName,
+        template: template,
+        userSegment: userSegment,
+        customOptions: themeOptions,
+        context: context, // Pass the context parameter for theme extraction and error handling
+        onAdLoaded: (ad) {
+          _frequencyController.incrementAdCount(AdType.native);
+          if (onAdLoaded != null) {
+            onAdLoaded(ad);
+          }
+        },
+        onAdFailedToLoad: (error) {
+          debugPrint('[AdsManager] Native ad failed to load: $error');
+          if (onAdFailedToLoad != null) {
+            onAdFailedToLoad(error);
+          }
+        },
+      );
+      
+      // If ad is null but no error was reported through the callback
+      if (ad == null && onAdFailedToLoad != null) {
+        onAdFailedToLoad('Failed to load native ad (no ad returned)');
+      }
+      
+      return ad;
+    } catch (e) {
+      debugPrint('[AdsManager] Exception loading native ad: $e');
+      if (onAdFailedToLoad != null) {
+        onAdFailedToLoad('Exception: $e');
+      }
+      return null;
+    }
   }
 
   /// Loads an interstitial ad for future display
