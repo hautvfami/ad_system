@@ -18,6 +18,15 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
   // Danh sách ads đã được tải
   final Map<int, NativeAd> _loadedAds = {};
 
+  // Lưu thông tin kích thước cho mỗi quảng cáo
+  final Map<int, double> _adHeights = {};
+
+  // Danh sách các template có sẵn
+  final List<String> _availableTemplates = ['small', 'medium', 'large'];
+
+  // Template hiện tại đang được sử dụng
+  final Rx<String> _currentTemplate = 'medium'.obs;
+
   // Vị trí các quảng cáo trong danh sách (cứ mỗi 5 mục sẽ có 1 quảng cáo)
   final int _adInterval = 5;
 
@@ -82,7 +91,7 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
 
     AdsManager.instance.loadNativeAd(
       placementName: 'list_native_$adIndex',
-      template: 'medium',
+      template: _currentTemplate.value,
       onAdLoaded: (ad) {
         debugPrint(
           '✅ Quảng cáo cho vị trí ListView $listViewIndex (adIndex=$adIndex) đã tải THÀNH CÔNG',
@@ -154,9 +163,36 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
     return listViewIndex ~/ (_adInterval + 1);
   }
 
+  // Lấy chiều cao phù hợp cho quảng cáo dựa trên template
+  double _getAdHeight(String template) {
+    switch (template) {
+      case 'small':
+        return 120.0;
+      case 'large':
+        return 280.0;
+      case 'medium':
+      default:
+        return 200.0;
+    }
+  }
+
+  // Chọn template quảng cáo khác
+  void _changeAdTemplate(String template) {
+    if (_currentTemplate.value != template) {
+      _currentTemplate.value = template;
+
+      // Reload quảng cáo với template mới
+      _reloadVisibleAds();
+
+      _lastResult.value = 'Đã đổi template quảng cáo sang "$template"';
+    }
+  }
+
   // Tải lại quảng cáo hiện đang hiển thị
   void _reloadVisibleAds() {
-    debugPrint('Đang tải lại quảng cáo...');
+    debugPrint(
+      'Đang tải lại quảng cáo với template ${_currentTemplate.value}...',
+    );
     _isLoading.value = true;
 
     // Xóa quảng cáo đã tải
@@ -164,12 +200,14 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
       ad.dispose();
     }
     _loadedAds.clear();
+    _adHeights.clear(); // Xóa thông tin chiều cao cũ
 
     // Tải lại quảng cáo
     _preloadAds();
 
     // Hiện thông báo
-    _lastResult.value = 'Đã tải lại quảng cáo';
+    _lastResult.value =
+        'Đã tải lại quảng cáo với kích thước "${_currentTemplate.value}"';
     setState(() {});
   }
 
@@ -223,7 +261,54 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
                                 color: Colors.blue,
                               ),
                             ),
+                            const SizedBox(height: 8),
+
+                            // Thêm chọn template để thay đổi kích thước quảng cáo
+                            Text(
+                              'Chọn kích thước quảng cáo:',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 4),
+
+                            // Template selector
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ..._availableTemplates
+                                    .map(
+                                      (template) => Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        child: FilterChip(
+                                          label: Text(template.toUpperCase()),
+                                          selected:
+                                              _currentTemplate.value ==
+                                              template,
+                                          onSelected: (selected) {
+                                            if (selected) {
+                                              _changeAdTemplate(template);
+                                            }
+                                          },
+                                          labelStyle: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight:
+                                                _currentTemplate.value ==
+                                                        template
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ],
+                            ),
+
+                            const SizedBox(height: 8),
                             ElevatedButton.icon(
                               icon: const Icon(Icons.refresh, size: 16),
                               label: const Text('Tải lại tất cả quảng cáo'),
@@ -263,13 +348,37 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
                     debugPrint(
                       'Đã tìm thấy quảng cáo đã tải cho vị trí $index!',
                     );
-                    // Hiển thị quảng cáo đã được tải
+                    // Hiển thị quảng cáo đã được tải với kích thước phù hợp với template
                     return Card(
                       margin: const EdgeInsets.all(8),
                       elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceVariant.withOpacity(0.5),
+                          width: 0.5,
+                        ),
+                      ),
+                      clipBehavior:
+                          Clip.antiAlias, // Cắt nội dung theo hình dạng của card
                       child: Container(
-                        height: 250,
+                        height: _getAdHeight(_currentTemplate.value),
                         padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          // Thêm gradient nhẹ để tạo hiệu ứng hài hòa với UI
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Theme.of(context).colorScheme.surface,
+                              Theme.of(
+                                context,
+                              ).colorScheme.surface.withOpacity(0.92),
+                            ],
+                          ),
+                        ),
                         child: AdWidget(ad: _loadedAds[index]!),
                       ),
                     );
@@ -282,23 +391,52 @@ class _NativeAdsListViewDemoState extends State<NativeAdsListViewDemo> {
                     );
                     _loadAd(adIndex);
 
-                    // Hiển thị placeholder trong khi chờ tải
+                    // Hiển thị placeholder với kích thước phù hợp với template
                     return Card(
                       margin: const EdgeInsets.all(8),
                       elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.2),
+                          width: 0.5,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
                       child: Container(
-                        height: 120,
+                        height: _getAdHeight(_currentTemplate.value),
                         alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Colors.grey.shade100, Colors.grey.shade50],
+                          ),
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const CircularProgressIndicator(strokeWidth: 2),
                             const SizedBox(height: 8),
-                            Text('Đang tải quảng cáo cho vị trí $index...'),
+                            Text(
+                              'Đang tải quảng cáo ${_currentTemplate.value} cho vị trí $index...',
+                              style: const TextStyle(fontSize: 13),
+                            ),
                             const SizedBox(height: 8),
                             TextButton.icon(
-                              icon: const Icon(Icons.refresh),
+                              icon: const Icon(Icons.refresh, size: 16),
                               label: const Text('Thử lại'),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.1),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                              ),
                               onPressed: () {
                                 int adIndex = _getAdIndexFromListViewIndex(
                                   index,

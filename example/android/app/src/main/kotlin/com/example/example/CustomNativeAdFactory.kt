@@ -26,6 +26,9 @@ class CustomNativeAdFactory(private val context: Context) : NativeAdFactory {
         val nativeAdView = LayoutInflater.from(context)
             .inflate(R.layout.custom_native_ad, null) as NativeAdView
 
+        // Set background to transparent by default
+        nativeAdView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+
         // Set up the headline
         val headlineView = nativeAdView.findViewById<TextView>(R.id.ad_headline)
         headlineView.text = nativeAd?.headline
@@ -57,6 +60,7 @@ class CustomNativeAdFactory(private val context: Context) : NativeAdFactory {
 
         // Apply additional customizations from options if provided
         customOptions?.let {
+            // Apply background color (transparent by default)
             if (it.containsKey("backgroundColor")) {
                 val backgroundColor = it["backgroundColor"] as? String
                 backgroundColor?.let { color ->
@@ -65,6 +69,50 @@ class CustomNativeAdFactory(private val context: Context) : NativeAdFactory {
                     } catch (e: IllegalArgumentException) {
                         // Invalid color format
                     }
+                }
+            }
+
+            // Apply text styles
+            if (it.containsKey("textColor")) {
+                val textColor = it["textColor"] as? String
+                textColor?.let { color ->
+                    try {
+                        val parsedColor = android.graphics.Color.parseColor(color)
+                        headlineView.setTextColor(parsedColor)
+                        bodyView.setTextColor(parsedColor)
+                    } catch (e: IllegalArgumentException) {
+                        // Invalid color format
+                    }
+                }
+            }
+
+            // Apply button style
+            if (it.containsKey("buttonBackgroundColor") && it.containsKey("buttonTextColor")) {
+                try {
+                    val btnBgColor = it["buttonBackgroundColor"] as? String
+                    val btnTextColor = it["buttonTextColor"] as? String
+                    
+                    if (btnBgColor != null && btnTextColor != null) {
+                        callToActionView.setBackgroundColor(android.graphics.Color.parseColor(btnBgColor))
+                        callToActionView.setTextColor(android.graphics.Color.parseColor(btnTextColor))
+                    }
+                } catch (e: IllegalArgumentException) {
+                    // Invalid color format
+                }
+            }
+            
+            // Apply corner radius to button if provided
+            if (it.containsKey("buttonCornerRadius")) {
+                try {
+                    val radius = it["buttonCornerRadius"] as? Float
+                    if (radius != null) {
+                        val gd = android.graphics.drawable.GradientDrawable()
+                        gd.setColor(callToActionView.solidColor)
+                        gd.cornerRadius = radius
+                        callToActionView.background = gd
+                    }
+                } catch (e: Exception) {
+                    // Error setting corner radius
                 }
             }
         }
